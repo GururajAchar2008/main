@@ -1,0 +1,42 @@
+    {% extends "base.html" %}
+
+    {% block title %}About App{% endblock %}
+
+    {% block content %}
+        <h2 class="text-center">About Customer Service Management App</h2>
+        <p>This application is designed to streamline the management of customer details and service records for businesses dealing with customer service, such as RO water purifier services.</p>
+
+        <h3>Key Features:</h3>
+        <ul>
+            <li><strong>User Authentication:</strong> Secure login system with distinct roles for Super Admin, Admin, and regular Users/Staff.</li>
+            <li><strong>Role-Based Access Control:</strong>
+                <ul>
+                    <li><strong>Super Admin:</strong> Full control, including adding new Admin/User accounts, and all Admin functionalities.</li>
+                    <li><strong>Admin:</strong> Manage customers (add, view, edit, remove), and add service records.</li>
+                    <li><strong>User/Staff:</strong> View customers, add new customers, edit existing customer details, and add service records for existing customers.</li>
+                </ul>
+            </li>
+            <li><strong>Customer Management:</strong>
+                <ul>
+                    <li>Add new customer details (name, contact, address, unique ID, RO model/color).</li>
+                    <li>View a comprehensive list of all customers.</li>
+                    <li>Search functionality to quickly find customers by various criteria.</li>
+                    <li>Edit existing customer details.</li>
+                    <li>Soft-delete customers (marks as removed, but retains historical data).</li>
+                </ul>
+            </li>
+            <li><strong>Service Tracking:</strong>
+                <ul>
+                    <li>Record detailed service information for each customer.</li>
+                    <li>Select from a predefined list of service parts/items with quantity.</li>
+                    <li>Ability to add additional service charges and a description of the problem/solution.</li>
+                    <li>Automatic calculation of total service cost.</li>
+                    <li>View complete service history for each customer, including who performed the service and when.</li>
+                </ul>
+            </li>
+            <li><strong>Dashboard:</strong> Provides an overview of total customers and total services performed.</li>
+        </ul>
+
+        <h3>Purpose:</h3>
+        <p>The primary goal of this application is to provide an efficient and organized way to manage customer interactions and service history, improving customer satisfaction and operational efficiency for service-oriented businesses.</p>
+    {% endblock %}

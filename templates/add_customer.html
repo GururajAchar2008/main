@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Customer{% endblock %}
+
+{% block content %}
+    <h2 class="text-center">Add New Customer</h2>
+    <form method="POST" action="{{ url_for('add_customer') }}">
+        <div class="form-group">
+            <label for="customerName">Customer Name:</label>
+            <input type="text" id="customerName" name="customerName" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="customerNumber">Customer Phone Number:</label>
+            <input type="text" id="customerNumber" name="customerNumber" class="form-control" pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)" required>
+        </div>
+        <div class="form-group">
+            <label for="customerID">Customer Unique ID:</label>
+            <input type="text" id="customerID" name="customerID" class="form-control" required>
+            <small class="form-text text-muted">e.g., A unique identifier for the customer (e.g., their old service ID, or a custom code).</small>
+        </div>
+        <div class="form-group">
+            <label for="customerAddress">Address:</label>
+            <textarea id="customerAddress" name="customerAddress" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="customerCity">City:</label>
+            <input type="text" id="customerCity" name="customerCity" class="form-control" list="cities" required>
+            <datalist id="cities">
+                {% for city, pincode in CITY_PINCODE_MAP.items() %}
+                    <option value="{{ city }}">{{ city | capitalize }}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="form-group">
+            <label for="customerPincode">Pincode:</label>
+            <input type="text" id="customerPincode" name="customerPincode" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="customerVillage">Village/Locality:</label>
+            <input type="text" id="customerVillage" name="customerVillage" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="customerModel">Model :</label>
+            <input type="text" id="customerModel" name="customerModel" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="customerColor">Color:</label>
+            <input type="text" id="customerColor" name="customerColor" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Customer</button>
+        <a href="{{ url_for('view_customers') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+    <script>
+        // JavaScript to auto-fill pincode based on city selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const cityInput = document.getElementById('customerCity');
+            const pincodeInput = document.getElementById('customerPincode');
+            const cityPincodeMap = {{ CITY_PINCODE_MAP | tojson }}; // Pass map from Flask to JS
+
+            cityInput.addEventListener('input', function() {
+                const selectedCity = cityInput.value.toLowerCase();
+                if (cityPincodeMap[selectedCity]) {
+                    pincodeInput.value = cityPincodeMap[selectedCity];
+                } else {
+                    // Clear pincode if city not found in map, or allow manual entry
+                    // pincodeInput.value = '';
+                }
+            });
+        });
+    </script>
+{% endblock %}

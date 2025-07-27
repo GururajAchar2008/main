@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Customer{% endblock %}
+
+{% block content %}
+    <div class="form-container">
+        <h2>Edit Customer Details</h2>
+        <form method="POST" action="{{ url_for('edit_customer', customer_db_id=customer.id) }}">
+            <div class="form-group">
+                <label for="customerName">Customer Name:</label>
+                <input type="text" id="customerName" name="customerName" class="form-control" value="{{ customer.customerName }}" required>
+            </div>
+            <div class="form-group">
+                <label for="customerNumber">Customer Phone Number:</label>
+                <input type="text" id="customerNumber" name="customerNumber" class="form-control" value="{{ customer.customerNumber }}" pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)" required>
+            </div>
+            <div class="form-group">
+                <label for="customerID">Customer Unique ID:</label>
+                <input type="text" id="customerID" name="customerID" class="form-control" value="{{ customer.customerID }}" required>
+            </div>
+            <div class="form-group">
+                <label for="customerAddress">Address:</label>
+                <textarea id="customerAddress" name="customerAddress" class="form-control" rows="3" required>{{ customer.customerAddress }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="customerCity">City:</label>
+                <input type="text" id="customerCity" name="customerCity" class="form-control" list="cities" value="{{ customer.customerCity }}" required>
+                <datalist id="cities">
+                    {% for city, pincode in CITY_PINCODE_MAP.items() %}
+                        <option value="{{ city }}">{{ city | capitalize }}</option>
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label for="customerPincode">Pincode:</label>
+                <input type="text" id="customerPincode" name="customerPincode" class="form-control" value="{{ customer.customerPincode }}" required>
+            </div>
+            <div class="form-group">
+                <label for="customerVillage">Village/Locality:</label>
+                <input type="text" id="customerVillage" name="customerVillage" class="form-control" value="{{ customer.customerVillage }}" required>
+            </div>
+            <div class="form-group">
+                <label for="customerModel">RO Model (Optional):</label>
+                <input type="text" id="customerModel" name="customerModel" class="form-control" value="{{ customer.customerModel if customer.customerModel else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="customerColor">RO Color (Optional):</label>
+                <input type="text" id="customerColor" name="customerColor" class="form-control" value="{{ customer.customerColor if customer.customerColor else '' }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cityInput = document.getElementById('customerCity');
+            const pincodeInput = document.getElementById('customerPincode');
+            const cityPincodeMap = {{ CITY_PINCODE_MAP | tojson }}; // Passed from Flask context
+
+            cityInput.addEventListener('input', function() {
+                const selectedCity = cityInput.value.toLowerCase();
+                if (cityPincodeMap[selectedCity]) {
+                    pincodeInput.value = cityPincodeMap[selectedCity];
+                } else {
+                    // Optionally clear the pincode if city not found, or allow manual entry
+                    // pincodeInput.value = '';
+                }
+            });
+        });
+    </script>
+{% endblock %}

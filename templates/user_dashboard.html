@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+
+{% block content %}
+    <h2 class="text-center">Welcome, {{ username }} ({{ current_role.capitalize() }})!</h2>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3>Total Customers</h3>
+            <p>{{ total_customers }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Services Done</h3>
+            <p>{{ total_services }}</p>
+        </div>
+    </div>
+
+    <h3 class="text-center">User Actions</h3>
+    <div class="dashboard-actions" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+        <a href="{{ url_for('view_customers') }}" class="btn btn-info">
+            <i class="fas fa-users"></i> View All Customers
+        </a>
+        <a href="{{ url_for('about_app') }}" class="btn btn-secondary">
+            <i class="fas fa-info-circle"></i> About App
+        </a>
+    </div>
+{% endblock %}

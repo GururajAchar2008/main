@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Add New User/Staff{% endblock %}
+
+{% block content %}
+    <h2 class="text-center">Add New User/Staff</h2>
+    <form method="POST" action="{{ url_for('add_user') }}">
+        <div class="form-group">
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="number">Phone Number:</label>
+            <input type="text" id="number" name="number" class="form-control" pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)" required>
+        </div>
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="role">Role:</label>
+            <select id="role" name="role" class="form-control" required>
+                <option value="admin">Admin</option>
+                <option value="user">User/Staff</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Add User</button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

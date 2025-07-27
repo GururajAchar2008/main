@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}View All Customers{% endblock %}
+
+{% block content %}
+    <h2 class="text-center">All Customers</h2>
+
+    <div class="search-bar-container">
+        <form method="GET" action="{{ url_for('view_customers') }}" style="display: flex; width: 100%;">
+            <input type="search" name="search" placeholder="Search by Name, ID, Number, City, Village or Pincode..." class="form-control" value="{{ search_term }}">
+            <button type="submit" class="btn btn-primary" style="margin-left: 10px;">Search</button>
+        </form>
+    </div>
+
+    {% if customers %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>ID</th>
+                        <th>Address</th>
+                        <th>City</th>
+                        <th>Pincode</th>
+                        <th>Village</th>
+                        <th>Model</th>
+                        <th>Color</th>
+                        <th>Added By</th>
+                        <th>Added On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ customer.customerName }}</td>
+                        <td>{{ customer.customerNumber }}</td>
+                        <td>{{ customer.customerID }}</td>
+                        <td>{{ customer.customerAddress }}</td>
+                        <td>{{ customer.customerCity }}</td>
+                        <td>{{ customer.customerPincode }}</td>
+                        <td>{{ customer.customerVillage }}</td>
+                        <td>{{ customer.customerModel if customer.customerModel else 'N/A' }}</td>
+                        <td>{{ customer.customerColor if customer.customerColor else 'N/A' }}</td>
+                        <td>{{ customer.addedByUserId }}</td>
+                        <td>{{ customer.timestamp.split('T')[0] if customer.timestamp }}</td> {# Display only date #}
+                        <td>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <button class="btn btn-success btn-sm" onclick="openAddServiceModal({{ customer.id }})">
+                                    <i class="fas fa-tools"></i> Add Service
+                                </button>
+                                {% if current_role in ['admin', 'super_admin'] %}
+                                    <button class="btn btn-info btn-sm" onclick="openEditCustomerModal({{ customer.id }})">
+                                        <i class="fas fa-edit"></i> Edit Details
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="openRemoveCustomerModal({{ customer.id }}, '{{ customer.customerName }}')">
+                                        <i class="fas fa-trash-alt"></i> Remove
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="12">
+                            <div class="service-history-container">
+                                <h4>Service History for {{ customer.customerName }} (ID: {{ customer.customerID }})</h4>
+                                {% if customer.services %}
+                                    {% for service in customer.services %}
+                                        <div class="service-entry">
+                                            <h4>Service on {{ service.serviceDate.split('T')[0] if service.serviceDate }} by {{ service.servedByUserId }}</h4>
+                                            <ul>
+                                                {% for key, item in service.selected_items.items() %}
+                                                    <li>
+                                                        <strong>{{ item.name }}:</strong> {{ item.quantity }} {{ item.unit }}{% if item.quantity > 1 and item.unit == 'item' %}s{% endif %} ({{ item.price_per_unit }} Rs/{{ item.unit }})
+                                                    </li>
+                                                {% endfor %}
+                                                {% if service.additionalServiceCharge > 0 %}
+                                                    <li><strong>Additional Service Charge:</strong> {{ service.additionalServiceCharge }} Rs</li>
+                                                {% endif %}
+                                            </ul>
+                                            <p><strong>Total Cost:</strong> {{ service.totalCost }} Rs</p>
+                                            {% if service.description %}
+                                                <p class="description"><strong>Description:</strong> {{ service.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p>No service history found for this customer.</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-center">No customers found. {% if current_role in ['admin', 'super_admin'] %}<a href="{{ url_for('add_customer') }}">Add a new customer</a> to get started.{% endif %}</p>
+    {% endif %}
+
+    <!-- Add Service Modal -->
+    <div id="addServiceModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('addServiceModal')">&times;</span>
+            <h2>Add Service for <span id="modalCustomerName"></span></h2>
+            <form id="addServiceForm" method="POST">
+                <input type="hidden" id="addServiceCustomerId" name="customer_db_id">
+
+                <p><strong>Base Service Charge: {{ SERVICE_CHARGE }} Rs</strong> (This is automatically included)</p>
+
+                {% for key, item in SERVICE_PRICES.items() %}
+                <div class="form-group service-item-group">
+                    <label for="quantity_{{ key }}">{{ item.name }} ({{ item.price }} Rs/{{ item.unit }}):</label>
+                    <input type="number" id="quantity_{{ key }}" name="quantity_{{ key }}" class="form-control" value="0" min="0" oninput="calculateServiceCost()">
+                </div>
+                {% endfor %}
+
+                <div class="form-group">
+                    <label for="additionalServiceCharge">Additional Service Charge (if any):</label>
+                    <input type="number" id="additionalServiceCharge" name="additionalServiceCharge" class="form-control" value="0" min="0" step="any" oninput="calculateServiceCost()">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description of Service (Optional):</label>
+                    <textarea id="description" name="description" class="form-control" rows="3"></textarea>
+                </div>
+
+                <p><strong>Estimated Total Service Cost: <span id="estimatedTotalCost">{{ SERVICE_CHARGE }}</span> Rs</strong></p>
+
+                <button type="submit" class="btn btn-primary">Add Service</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addServiceModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Customer Modal -->
+    <div id="editCustomerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('editCustomerModal')">&times;</span>
+            <h2>Edit Customer Details</h2>
+            <form id="editCustomerForm" method="POST">
+                <input type="hidden" id="editCustomerId" name="customer_db_id">
+
+                <div class="form-group">
+                    <label for="editCustomerName">Customer Name:</label>
+                    <input type="text" id="editCustomerName" name="customerName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerNumber">Customer Phone Number:</label>
+                    <input type="text" id="editCustomerNumber" name="customerNumber" class="form-control" pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerID">Customer Unique ID:</label>
+                    <input type="text" id="editCustomerID" name="customerID" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerAddress">Address:</label>
+                    <textarea id="editCustomerAddress" name="customerAddress" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerCity">City:</label>
+                    <input type="text" id="editCustomerCity" name="customerCity" class="form-control" list="editCities" required>
+                    <datalist id="editCities">
+                        {% for city, pincode in CITY_PINCODE_MAP.items() %}
+                            <option value="{{ city }}">{{ city | capitalize }}</option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerPincode">Pincode:</label>
+                    <input type="text" id="editCustomerPincode" name="customerPincode" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerVillage">Village/Locality:</label>
+                    <input type="text" id="editCustomerVillage" name="customerVillage" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerModel"> Model :</label>
+                    <input type="text" id="editCustomerModel" name="customerModel" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerColor">Color:</label>
+                    <input type="text" id="editCustomerColor" name="customerColor" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editCustomerModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Remove Customer Confirmation Modal -->
+    <div id="removeCustomerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('removeCustomerModal')">&times;</span>
+            <h2>Confirm Removal</h2>
+            <p>Are you sure you want to remove customer "<strong id="removeCustomerName"></strong>" (ID: <strong id="removeCustomerID"></strong>)?</p>
+            <p style="color: red; font-weight: bold;">This action will mark the customer as removed and hide them from the list, but their data will remain in the database for historical purposes.</p>
+            <form id="removeCustomerForm" method="POST">
+                <input type="hidden" id="removeCustomerIdInput" name="customer_db_id">
+                <button type="submit" class="btn btn-danger">Yes, Remove Customer</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('removeCustomerModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        const SERVICE_PRICES_JS = {{ SERVICE_PRICES | tojson }};
+        const SERVICE_CHARGE_JS = {{ SERVICE_CHARGE }};
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modals if clicked outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        function openAddServiceModal(customerId) {
+            document.getElementById('addServiceCustomerId').value = customerId;
+            document.getElementById('addServiceForm').action = "{{ url_for('add_service', customer_db_id=0) }}".replace('0', customerId);
+
+            // Reset quantities and additional charge
+            for (const key in SERVICE_PRICES_JS) {
+                document.getElementById(`quantity_${key}`).value = 0;
+            }
+            document.getElementById('additionalServiceCharge').value = 0;
+            document.getElementById('description').value = ''; // Clear description
+            calculateServiceCost(); // Recalculate total cost
+
+            // Find the customer name to display in the modal title
+            const customerRow = document.querySelector(`button[onclick="openAddServiceModal(${customerId})"]`).closest('tr');
+            if (customerRow) {
+                const customerName = customerRow.querySelector('td:nth-child(1)').innerText; // Assuming name is first td
+                document.getElementById('modalCustomerName').innerText = customerName;
+            }
+
+            openModal('addServiceModal');
+        }
+
+        function calculateServiceCost() {
+            let totalCost = SERVICE_CHARGE_JS; // Start with base service charge
+
+            for (const key in SERVICE_PRICES_JS) {
+                const quantityInput = document.getElementById(`quantity_${key}`);
+                const quantity = parseInt(quantityInput.value) || 0;
+                totalCost += (SERVICE_PRICES_JS[key].price * quantity);
+            }
+
+            const additionalChargeInput = document.getElementById('additionalServiceCharge');
+            const additionalCharge = parseFloat(additionalChargeInput.value) || 0;
+            totalCost += additionalCharge;
+
+            document.getElementById('estimatedTotalCost').innerText = totalCost.toFixed(2);
+        }
+
+        function openEditCustomerModal(customerId) {
+            document.getElementById('editCustomerId').value = customerId;
+            document.getElementById('editCustomerForm').action = "{{ url_for('edit_customer', customer_db_id=0) }}".replace('0', customerId);
+
+            // Find the customer data from the table row to pre-fill the form
+            const customerRow = document.querySelector(`button[onclick="openEditCustomerModal(${customerId})"]`).closest('tr');
+            if (customerRow) {
+                const cells = customerRow.querySelectorAll('td');
+                document.getElementById('editCustomerName').value = cells[0].innerText;
+                document.getElementById('editCustomerNumber').value = cells[1].innerText;
+                document.getElementById('editCustomerID').value = cells[2].innerText;
+                document.getElementById('editCustomerAddress').value = cells[3].innerText;
+                document.getElementById('editCustomerCity').value = cells[4].innerText;
+                document.getElementById('editCustomerPincode').value = cells[5].innerText;
+                document.getElementById('editCustomerVillage').value = cells[6].innerText;
+                document.getElementById('editCustomerModel').value = cells[7].innerText === 'N/A' ? '' : cells[7].innerText;
+                document.getElementById('editCustomerColor').value = cells[8].innerText === 'N/A' ? '' : cells[8].innerText;
+            }
+            openModal('editCustomerModal');
+        }
+
+        function openRemoveCustomerModal(customerId, customerName) {
+            document.getElementById('removeCustomerIdInput').value = customerId;
+            document.getElementById('removeCustomerName').innerText = customerName;
+            // Assuming customerID is in the 3rd column (index 2)
+            const customerRow = document.querySelector(`button[onclick="openRemoveCustomerModal(${customerId}, '${customerName}')"]`).closest('tr');
+            if (customerRow) {
+                const customerID = customerRow.querySelectorAll('td')[2].innerText;
+                document.getElementById('removeCustomerID').innerText = customerID;
+            }
+            document.getElementById('removeCustomerForm').action = "{{ url_for('remove_customer', customer_db_id=0) }}".replace('0', customerId);
+            openModal('removeCustomerModal');
+        }
+
+        // Auto-fill pincode for edit customer modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const editCityInput = document.getElementById('editCustomerCity');
+            const editPincodeInput = document.getElementById('editCustomerPincode');
+            const cityPincodeMap = {{ CITY_PINCODE_MAP | tojson }};
+
+            if (editCityInput && editPincodeInput) {
+                editCityInput.addEventListener('input', function() {
+                    const selectedCity = editCityInput.value.toLowerCase();
+                    if (cityPincodeMap[selectedCity]) {
+                        editPincodeInput.value = cityPincodeMap[selectedCity];
+                    } else {
+                        // Optionally clear or allow manual entry
+                    }
+                });
+            }
+        });
+
+    </script>
+{% endblock %}
